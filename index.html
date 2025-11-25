@@ -38,7 +38,7 @@
     #overlay {
       position: absolute;
       left: 50%;
-      bottom: 12%;           /* 想再往上就改大一點，例如 15% */
+      bottom: 8%;           /* 想再往上就改大一點，例如 15% */
       transform: translateX(-50%);
       width: 100%;
       display: flex;
@@ -71,7 +71,7 @@
     // 幾乎佔滿寬度的半圓
     let cx = canvas.width / 2;
     let cy = canvas.height - 18;        // 靠近畫布底部
-    let outerR = canvas.width * 0.48;   // ≈ 全寬的 96%
+    let outerR = canvas.width * 0.38;   // ≈ 全寬的 96%
     let innerR = outerR * 0.7;          // 半圓厚度
 
     const ARC_START = Math.PI;          // 180°（左邊）
