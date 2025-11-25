@@ -4,69 +4,70 @@
   <meta charset="UTF-8" />
   <title>聖誕訊號小遊戲</title>
   <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
-    body {
-      background: #000;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  body {
+    background: #000;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
 
-    /* 外層容器：上面是圖片、下面是遊戲指針 */
-    .wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
+  /* 外層容器：寬度跟著圖片走，讓指針可以疊在圖片上 */
+  .wrapper {
+    position: relative;
+    width: 90vw;
+    max-width: 600px;
+  }
 
-    /* 主圖片：換成你的聖誕手機圖 */
-    .main-image {
-      width: 90vw;
-      max-width: 600px;
-      height: auto;
-      display: block;
-    }
+  /* 主圖片 */
+  .main-image {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 
-    /* 圖片下方的遊戲區 */
-    #overlay {
-      margin-top: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      pointer-events: none;  /* 點擊事件交給 window 來處理 */
-    }
+  /* 指針遊戲疊在圖片「下方四分之一」附近 */
+  #overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 12%;                 /* 調整這個數字可以改高低：越大越往上 */
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;         /* 點擊交給 window */
+  }
 
+  #gameCanvas {
+    width: 80%;                   /* 畫面稍微放大 */
+    max-width: 480px;
+    height: auto;
+  }
+
+  #status {
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 999px;
+    font-size: 14px;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  @media (min-aspect-ratio: 3/4) {
     #gameCanvas {
-      width: 80vw;
-      max-width: 600px;
-      height: auto;
+      width: 70%;
     }
-
-    #status {
-      margin-top: 8px;
-      padding: 4px 10px;
-      background: rgba(0,0,0,0.55);
-      border-radius: 999px;
-      font-size: 14px;
-      text-align: center;
-      pointer-events: none;
-    }
-
-    @media (min-aspect-ratio: 3/4) {
-      /* 橫向螢幕時讓畫布小一點 */
-      #gameCanvas {
-        width: 50vw;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
   <div class="wrapper">
@@ -80,34 +81,33 @@
     </div>
   </div>
 
-  <script>
+ <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
   const statusEl = document.getElementById("status");
 
-  // 把圓心放在畫布靠下方一點，半圓往「上面」長出來
+  // 圓心放在畫布底部附近，半圓往上長出來（看得比較大）
   const cx = canvas.width / 2;
-  const cy = canvas.height - 10;   // 靠近畫布底部
-  const outerR = 120;
-  const innerR = 80;
+  const cy = canvas.height - 5;   // 越小越往上
+  const outerR = 170;             // 放大：外圈半徑
+  const innerR = 120;             // 放大：內圈半徑
 
-  // 畫一個下緣在圓心、往上長出的半圓（180° ~ 360°）
+  // 畫下半圓（180°~360°）
   const ARC_START = Math.PI;        // 180°
   const ARC_END   = Math.PI * 2;    // 360°
   const ARC_LEN   = ARC_END - ARC_START;
 
   let pointerAngle = ARC_START;
   let pointerDir = 1;
-  const pointerSpeed = 2.0;  // 可自行調整快慢
+  const pointerSpeed = 2.0;
 
   let redStart = 0;
   let redEnd = 0;
 
-  let isStopped = false;  // false: 自動左右搖擺, true: 已停止顯示結果
+  let isStopped = false;
   let lastTime = null;
 
   function resetRound() {
-    // 紅色中獎區域：隨機長度 + 位置
     const redLen = ARC_LEN * (0.18 + Math.random() * 0.14);
     redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
     redEnd = redStart + redLen;
@@ -119,7 +119,7 @@
   }
 
   function drawArc() {
-    // 白色半圓背景
+    // 白色半圓
     ctx.beginPath();
     ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
     ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
@@ -127,7 +127,7 @@
     ctx.fillStyle = "#ffffff";
     ctx.fill();
 
-    // 紅色中獎範圍
+    // 紅色中獎區域
     ctx.beginPath();
     ctx.arc(cx, cy, outerR, redStart, redEnd, false);
     ctx.arc(cx, cy, innerR, redEnd, redStart, true);
@@ -141,7 +141,6 @@
     const x = cx + midR * Math.cos(pointerAngle);
     const y = cy + midR * Math.sin(pointerAngle);
 
-    // 指針線：從圓心射出去
     ctx.strokeStyle = "#3ecfff";
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -149,7 +148,6 @@
     ctx.lineTo(x, y);
     ctx.stroke();
 
-    // 指針頭的小圓點
     ctx.beginPath();
     ctx.arc(x, y, 8, 0, Math.PI * 2);
     ctx.fillStyle = "#3ecfff";
@@ -161,7 +159,6 @@
 
     pointerAngle += pointerDir * pointerSpeed * dt;
 
-    // 碰到左右邊界就反彈
     if (pointerAngle > ARC_END) {
       pointerAngle = ARC_END;
       pointerDir = -1;
@@ -188,7 +185,6 @@
 
   function handleTap() {
     if (!isStopped) {
-      // 第一次點：停止並判定
       isStopped = true;
       const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
       if (hit) {
@@ -197,19 +193,16 @@
         statusEl.textContent = "❌ 差一點點，再試一次！再點一次螢幕重新開始。";
       }
     } else {
-      // 第二次點：重新開局
       resetRound();
     }
   }
 
-  // 全螢幕都可以點
   window.addEventListener("click", handleTap);
   window.addEventListener("touchstart", (e) => {
     e.preventDefault();
     handleTap();
   }, { passive: false });
 
-  // 可選：鍵盤空白鍵也能玩
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") {
       e.preventDefault();
