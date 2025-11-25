@@ -20,47 +20,47 @@
       min-height: 100vh;
     }
 
-    /* 外層容器：寬度決定圖片＋半圓的寬度 */
+    /* 外層：決定圖片＋半圓的寬度 */
     .wrapper {
       position: relative;
       width: 90vw;
       max-width: 600px;
     }
 
-    /* 上方背景圖片（請換成你的檔名） */
+    /* 上方聖誕圖片（換成你的檔名） */
     .main-image {
       width: 100%;
       height: auto;
       display: block;
     }
 
-    /* 半圓＋指針疊在圖片「下方四分之一」附近 */
+    /* 半圓指針疊在圖片裡，靠下方四分之一 */
     #overlay {
       position: absolute;
       left: 50%;
-      bottom: 12%;               /* 可調：越大越往上貼近畫面中央 */
+      bottom: 12%;           /* 想再往上就改大一點，例如 15% */
       transform: translateX(-50%);
       width: 100%;
       display: flex;
       justify-content: center;
-      pointer-events: none;       /* 點擊交給 window */
+      pointer-events: none;   /* 點擊交給 window */
     }
 
     #gameCanvas {
-      width: 100%;                /* 跟圖片一樣寬 */
-      height: auto;
+      width: 100%;           /* 幾乎跟圖片同寬 */
       max-width: 600px;
+      height: auto;
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- 換成你的聖誕手機圖 -->
-    <img src="BACKGROUND.png" alt="聖誕活動圖片" class="main-image">
+    <!-- 換成你的聖誕手機圖檔名 -->
+    <img src="BACKGROUND.png" alt="" class="main-image">
 
     <div id="overlay">
-      <!-- 高度加大一點，讓半圓可以做到接近整個寬度 -->
-      <canvas id="gameCanvas" width="600" height="340"></canvas>
+      <!-- 固定繪圖座標 600x300，視覺上會跟著上面的圖片縮放 -->
+      <canvas id="gameCanvas" width="600" height="300"></canvas>
     </div>
   </div>
 
@@ -68,15 +68,14 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // 讓半圓寬度 ≈ 圖片寬度
-    const cx = canvas.width / 2;
-    const cy = canvas.height - 20;            // 圓心靠近畫布底部
-    const outerR = canvas.width * 0.48;       // 外圈半徑 ≈ 寬度的一半（0.48*2 ≈ 0.96）
-    const innerR = outerR * 0.7;              // 內圈半徑，決定厚度
+    // 幾乎佔滿寬度的半圓
+    let cx = canvas.width / 2;
+    let cy = canvas.height - 18;        // 靠近畫布底部
+    let outerR = canvas.width * 0.48;   // ≈ 全寬的 96%
+    let innerR = outerR * 0.7;          // 半圓厚度
 
-    // 0 ~ π：上半圓（像彩虹那樣往上拱）
-    const ARC_START = 0;
-    const ARC_END   = Math.PI;
+    const ARC_START = Math.PI;          // 180°（左邊）
+    const ARC_END   = Math.PI * 2;      // 360°（右邊）
     const ARC_LEN   = ARC_END - ARC_START;
 
     let pointerAngle = ARC_START;
@@ -90,6 +89,7 @@
     let lastTime = null;
 
     function resetRound() {
+      // 隨機一段紅色中獎區域
       const redLen = ARC_LEN * (0.18 + Math.random() * 0.14);
       redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
       redEnd = redStart + redLen;
@@ -108,7 +108,7 @@
       ctx.fillStyle = "#ffffff";
       ctx.fill();
 
-      // 紅色中獎區域
+      // 紅色中獎區
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, redStart, redEnd, false);
       ctx.arc(cx, cy, innerR, redEnd, redStart, true);
@@ -169,12 +169,11 @@
         isStopped = true;
         const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
         if (hit) {
-          alert("✅ 恭喜！停在紅色範圍內！");
+          alert("✅ 恭喜！停在紅色區域內！");
         } else {
           alert("❌ 差一點點，再試一次！");
         }
       } else {
-        // 再點一次重新開始
         resetRound();
       }
     }
@@ -192,6 +191,9 @@
         handleTap();
       }
     });
+
+    // 若之後你有想讓 canvas 隨視窗 resize 更新繪圖座標，
+    // 可以在這裡加事件重新計算 cx, cy, outerR, innerR。
 
     resetRound();
     requestAnimationFrame(loop);
