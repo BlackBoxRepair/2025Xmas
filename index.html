@@ -4,213 +4,197 @@
   <meta charset="UTF-8" />
   <title>聖誕訊號小遊戲</title>
   <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-  }
-  body {
-    background: #000;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-  }
-
-  /* 外層容器：寬度跟著圖片走，讓指針可以疊在圖片上 */
-  .wrapper {
-    position: relative;
-    width: 90vw;
-    max-width: 600px;
-  }
-
-  /* 主圖片 */
-  .main-image {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  /* 指針遊戲疊在圖片「下方四分之一」附近 */
-  #overlay {
-    position: absolute;
-    left: 50%;
-    bottom: 12%;                 /* 調整這個數字可以改高低：越大越往上 */
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;         /* 點擊交給 window */
-  }
-
-  #gameCanvas {
-    width: 80%;                   /* 畫面稍微放大 */
-    max-width: 480px;
-    height: auto;
-  }
-
-  #status {
-    margin-top: 8px;
-    padding: 4px 10px;
-    background: rgba(0,0,0,0.55);
-    border-radius: 999px;
-    font-size: 14px;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  @media (min-aspect-ratio: 3/4) {
-    #gameCanvas {
-      width: 70%;
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
-  }
-</style>
+    body {
+      background: #000;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 外層容器：寬度決定圖片＋半圓的寬度 */
+    .wrapper {
+      position: relative;
+      width: 90vw;
+      max-width: 600px;
+    }
+
+    /* 上方背景圖片（請換成你的檔名） */
+    .main-image {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* 半圓＋指針疊在圖片「下方四分之一」附近 */
+    #overlay {
+      position: absolute;
+      left: 50%;
+      bottom: 12%;               /* 可調：越大越往上貼近畫面中央 */
+      transform: translateX(-50%);
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;       /* 點擊交給 window */
+    }
+
+    #gameCanvas {
+      width: 100%;                /* 跟圖片一樣寬 */
+      height: auto;
+      max-width: 600px;
+    }
+  </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- 上方主圖片（請換成你的圖片檔名） -->
+    <!-- 換成你的聖誕手機圖 -->
     <img src="BACKGROUND.png" alt="聖誕活動圖片" class="main-image">
 
-    <!-- 下方是遊戲指針 -->
     <div id="overlay">
-      <canvas id="gameCanvas" width="600" height="260"></canvas>
-      <div id="status">👆 點一下螢幕停止指針，停在紅色範圍就算獲勝！</div>
+      <!-- 高度加大一點，讓半圓可以做到接近整個寬度 -->
+      <canvas id="gameCanvas" width="600" height="340"></canvas>
     </div>
   </div>
 
- <script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-  const statusEl = document.getElementById("status");
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-  // 圓心放在畫布底部附近，半圓往上長出來（看得比較大）
-  const cx = canvas.width / 2;
-  const cy = canvas.height - 5;   // 越小越往上
-  const outerR = 170;             // 放大：外圈半徑
-  const innerR = 120;             // 放大：內圈半徑
+    // 讓半圓寬度 ≈ 圖片寬度
+    const cx = canvas.width / 2;
+    const cy = canvas.height - 20;            // 圓心靠近畫布底部
+    const outerR = canvas.width * 0.48;       // 外圈半徑 ≈ 寬度的一半（0.48*2 ≈ 0.96）
+    const innerR = outerR * 0.7;              // 內圈半徑，決定厚度
 
-  // 畫下半圓（180°~360°）
-  const ARC_START = Math.PI;        // 180°
-  const ARC_END   = Math.PI * 2;    // 360°
-  const ARC_LEN   = ARC_END - ARC_START;
+    // 0 ~ π：上半圓（像彩虹那樣往上拱）
+    const ARC_START = 0;
+    const ARC_END   = Math.PI;
+    const ARC_LEN   = ARC_END - ARC_START;
 
-  let pointerAngle = ARC_START;
-  let pointerDir = 1;
-  const pointerSpeed = 2.0;
+    let pointerAngle = ARC_START;
+    let pointerDir = 1;
+    const pointerSpeed = 2.0;
 
-  let redStart = 0;
-  let redEnd = 0;
+    let redStart = 0;
+    let redEnd = 0;
 
-  let isStopped = false;
-  let lastTime = null;
+    let isStopped = false;
+    let lastTime = null;
 
-  function resetRound() {
-    const redLen = ARC_LEN * (0.18 + Math.random() * 0.14);
-    redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
-    redEnd = redStart + redLen;
+    function resetRound() {
+      const redLen = ARC_LEN * (0.18 + Math.random() * 0.14);
+      redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
+      redEnd = redStart + redLen;
 
-    pointerAngle = ARC_START;
-    pointerDir = 1;
-    isStopped = false;
-    statusEl.textContent = "👆 點一下螢幕停止指針，停在紅色範圍就算獲勝！";
-  }
-
-  function drawArc() {
-    // 白色半圓
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
-    ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
-    ctx.closePath();
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
-
-    // 紅色中獎區域
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, redStart, redEnd, false);
-    ctx.arc(cx, cy, innerR, redEnd, redStart, true);
-    ctx.closePath();
-    ctx.fillStyle = "#ff4b4b";
-    ctx.fill();
-  }
-
-  function drawPointer() {
-    const midR = (outerR + innerR) / 2;
-    const x = cx + midR * Math.cos(pointerAngle);
-    const y = cy + midR * Math.sin(pointerAngle);
-
-    ctx.strokeStyle = "#3ecfff";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = "#3ecfff";
-    ctx.fill();
-  }
-
-  function update(dt) {
-    if (isStopped) return;
-
-    pointerAngle += pointerDir * pointerSpeed * dt;
-
-    if (pointerAngle > ARC_END) {
-      pointerAngle = ARC_END;
-      pointerDir = -1;
-    } else if (pointerAngle < ARC_START) {
       pointerAngle = ARC_START;
       pointerDir = 1;
+      isStopped = false;
     }
-  }
 
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawArc();
-    drawPointer();
-  }
+    function drawArc() {
+      // 白色半圓
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
+      ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
+      ctx.closePath();
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
 
-  function loop(timestamp) {
-    if (lastTime == null) lastTime = timestamp;
-    const dt = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-    update(dt);
-    render();
-    requestAnimationFrame(loop);
-  }
+      // 紅色中獎區域
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, redStart, redEnd, false);
+      ctx.arc(cx, cy, innerR, redEnd, redStart, true);
+      ctx.closePath();
+      ctx.fillStyle = "#ff4b4b";
+      ctx.fill();
+    }
 
-  function handleTap() {
-    if (!isStopped) {
-      isStopped = true;
-      const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
-      if (hit) {
-        statusEl.textContent = "✅ 恭喜！你在紅色區域內停止訊號！再點一次螢幕重新開始。";
-      } else {
-        statusEl.textContent = "❌ 差一點點，再試一次！再點一次螢幕重新開始。";
+    function drawPointer() {
+      const midR = (outerR + innerR) / 2;
+      const x = cx + midR * Math.cos(pointerAngle);
+      const y = cy + midR * Math.sin(pointerAngle);
+
+      ctx.strokeStyle = "#3ecfff";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = "#3ecfff";
+      ctx.fill();
+    }
+
+    function update(dt) {
+      if (isStopped) return;
+
+      pointerAngle += pointerDir * pointerSpeed * dt;
+
+      if (pointerAngle > ARC_END) {
+        pointerAngle = ARC_END;
+        pointerDir = -1;
+      } else if (pointerAngle < ARC_START) {
+        pointerAngle = ARC_START;
+        pointerDir = 1;
       }
-    } else {
-      resetRound();
     }
-  }
 
-  window.addEventListener("click", handleTap);
-  window.addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    handleTap();
-  }, { passive: false });
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawArc();
+      drawPointer();
+    }
 
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
+    function loop(timestamp) {
+      if (lastTime == null) lastTime = timestamp;
+      const dt = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function handleTap() {
+      if (!isStopped) {
+        isStopped = true;
+        const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
+        if (hit) {
+          alert("✅ 恭喜！停在紅色範圍內！");
+        } else {
+          alert("❌ 差一點點，再試一次！");
+        }
+      } else {
+        // 再點一次重新開始
+        resetRound();
+      }
+    }
+
+    // 全畫面都可以點
+    window.addEventListener("click", handleTap);
+    window.addEventListener("touchstart", (e) => {
       e.preventDefault();
       handleTap();
-    }
-  });
+    }, { passive: false });
 
-  resetRound();
-  requestAnimationFrame(loop);
-</script>
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleTap();
+      }
+    });
+
+    resetRound();
+    requestAnimationFrame(loop);
+  </script>
+</body>
 </html>
