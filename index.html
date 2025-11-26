@@ -289,20 +289,20 @@
   }
 
   function drawArc() {
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
-    ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
-    ctx.closePath();
-    ctx.fillStyle = "#ffffff";
-    ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
+  ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, outerR, redStart, redEnd, false);
-    ctx.arc(cx, cy, innerR, redEnd, ARC_START, true);
-    ctx.closePath();
-    ctx.fillStyle = "#ff4b4b";
-    ctx.fill();
-  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, redStart, redEnd, false);
+  ctx.arc(cx, cy, innerR, redEnd, ARC_START, true);  // ← 問題在這一行
+  ctx.closePath();
+  ctx.fillStyle = "#ff4b4b";
+  ctx.fill();
+}
 
   function drawPointer() {
     const midR = (outerR + innerR) / 2;
