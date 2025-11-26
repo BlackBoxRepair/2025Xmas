@@ -167,14 +167,14 @@
       margin-right: 6px;
     }
 
-    /* 失敗提示小框 */
+    /* 失敗提示小框：放在 wrapper 裡、半圓上方，底部有黃色圓角框 */
     #failToast {
-      position: fixed;
-      top: 16px;
+      position: absolute;
       left: 50%;
+      bottom: 28%;  /* 比半圓的 bottom:8% 再高一些 */
       transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
-      padding: 6px 14px;
-      background: rgba(0, 0, 0, 0.78);
+      padding: 6px 16px 12px;
+      background: rgba(0, 0, 0, 0.82);
       border-radius: 999px;
       font-size: 14px;
       letter-spacing: 0.08em;
@@ -182,8 +182,21 @@
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
-      z-index: 1100;
+      z-index: 950;  /* 比 canvas 高、比 overlay 低就好 */
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    }
+
+    #failToast::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -4px;
+      width: 70%;
+      height: 6px;
+      background: #ffd54f;
+      border-radius: 999px;
+      box-shadow: 0 0 8px rgba(255, 213, 79, 0.7);
     }
   </style>
 </head>
@@ -195,6 +208,9 @@
     <div id="overlay">
       <canvas id="gameCanvas" width="600" height="300"></canvas>
     </div>
+
+    <!-- 失敗提示小框：放在 wrapper 裡，位置才會跟著遊戲走 -->
+    <div id="failToast"></div>
   </div>
 
   <!-- 中獎時播放的動畫影片（修復聖誕訊號） -->
@@ -223,9 +239,6 @@
       <button id="callButton">CALL</button>
     </div>
   </div>
-
-  <!-- 失敗提示小框 -->
-  <div id="failToast"></div>
 
   <script>
   const canvas = document.getElementById("gameCanvas");
@@ -285,7 +298,7 @@
 
     ctx.beginPath();
     ctx.arc(cx, cy, outerR, redStart, redEnd, false);
-    ctx.arc(cx, cy, innerR, redEnd, redStart, true);
+    ctx.arc(cx, cy, innerR, redEnd, ARC_START, true);
     ctx.closePath();
     ctx.fillStyle = "#ff4b4b";
     ctx.fill();
@@ -356,7 +369,7 @@
     failToast.style.opacity = "0";
     failToast.style.transform = "translateX(-50%) translateY(10px)";
 
-    // 強制重算一次 layout，讓 transition 從這個狀態開始
+    // 強制 reflow，讓 transition 從這個狀態開始
     void failToast.offsetWidth;
 
     // 顯示：往上滑到原位並淡入
