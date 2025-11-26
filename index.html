@@ -169,25 +169,10 @@
 
     /* 失敗提示小框：放在 wrapper 裡、半圓上方，整個黃色圓角框 */
     #failToast {
-      position: absolute;
-      left: 50%;
-      bottom: 34%;  /* 再往上一點 */
-      transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
-      padding: 8px 18px 10px;
-      background: #ffd54f;
-      border-radius: 999px;
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      color: #5a3b00;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 950;  /* 比 canvas 高、比 overlay 低就好 */
-      box-shadow:
-        0 4px 10px rgba(0, 0, 0, 0.55),
-        0 0 10px rgba(255, 213, 79, 0.9);
-      transition: transform 0.6s ease-out, opacity 0.6s ease-out;
-    }
+  ...
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55); /* 只留黑色陰影 */
+  ...
+}
   </style>
 </head>
 <body>
