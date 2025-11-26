@@ -166,6 +166,25 @@
       content: "📞";
       margin-right: 6px;
     }
+
+    /* 失敗提示小框 */
+    #failToast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
+      padding: 6px 14px;
+      background: rgba(0, 0, 0, 0.78);
+      border-radius: 999px;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      color: #fff;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1100;
+      transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    }
   </style>
 </head>
 <body>
@@ -188,7 +207,6 @@
   <!-- 抽獎影片（按 CALL 後播放） -->
   <div id="prizeOverlay">
     <video id="prizeVideo" playsinline webkit-playsinline>
-      <!-- 把 DONG.MP4 改成你實際的檔名（大小寫要一樣） -->
       <source src="DONG.MP4" type="video/mp4">
     </video>
   </div>
@@ -206,6 +224,9 @@
     </div>
   </div>
 
+  <!-- 失敗提示小框 -->
+  <div id="failToast"></div>
+
   <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
@@ -216,10 +237,12 @@
   const prizeVideo = document.getElementById("prizeVideo");
   const messageOverlay = document.getElementById("messageOverlay");
   const callButton = document.getElementById("callButton");
+  const failToast = document.getElementById("failToast");
 
   let isWinVideoPlaying = false;
   let isMessageShowing = false;
   let isPrizePlaying = false;
+  let failToastTimer = null;
 
   // 幾乎佔滿寬度的半圓
   let cx = canvas.width / 2;
@@ -315,6 +338,38 @@
     requestAnimationFrame(loop);
   }
 
+  // ===== 失敗提示小框 =====
+  function showFailToast() {
+    if (!failToast) return;
+
+    const messages = ["訊號傳送失敗", "就差一點了", "加油！加油！"];
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    failToast.textContent = msg;
+
+    // 清除上一個計時器
+    if (failToastTimer) {
+      clearTimeout(failToastTimer);
+      failToastTimer = null;
+    }
+
+    // 起始狀態：略低、透明
+    failToast.style.opacity = "0";
+    failToast.style.transform = "translateX(-50%) translateY(10px)";
+
+    // 強制重算一次 layout，讓 transition 從這個狀態開始
+    void failToast.offsetWidth;
+
+    // 顯示：往上滑到原位並淡入
+    failToast.style.opacity = "1";
+    failToast.style.transform = "translateX(-50%) translateY(0)";
+
+    // 停留 1.2 秒後往上滑並淡出
+    failToastTimer = setTimeout(() => {
+      failToast.style.opacity = "0";
+      failToast.style.transform = "translateX(-50%) translateY(-20px)";
+    }, 1200);
+  }
+
   // ===== 流程控制 =====
 
   function showWinVideo() {
@@ -388,7 +443,7 @@
       if (hit) {
         showWinVideo();
       } else {
-        alert("❌ 差一點點，再試一次！");
+        showFailToast();
       }
     } else {
       resetRound();
@@ -457,6 +512,6 @@
 
   resetRound();
   requestAnimationFrame(loop);
-</script>
+  </script>
 </body>
 </html>
