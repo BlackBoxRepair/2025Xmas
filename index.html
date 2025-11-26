@@ -80,44 +80,62 @@
       z-index: 1000;
     }
 
-    /* 聖誕氛圍提示框 */
+    /* 🎄 聖誕氛圍提示框：白底＋草邊＋角落鈴鐺 */
     .message-box {
       position: relative;
       width: 80vw;
       max-width: 420px;
-      padding: 24px 20px 26px;
-      border-radius: 20px;
+      padding: 32px 20px 30px;
+      border-radius: 18px;
       text-align: center;
-      background: linear-gradient(135deg, #b71c1c, #880e4f);
-      border: 2px solid rgba(255, 255, 255, 0.9);
+      background: #ffffff;                      /* 白底 */
+      border: 3px solid #e0e0e0;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
       overflow: hidden;
     }
 
-    .message-box::before,
-    .message-box::after {
-      content: "";
+    /* 上下「草」裝飾條 */
+    .garland {
       position: absolute;
-      border-radius: 50%;
-      opacity: 0.35;
+      left: -10%;
+      right: -10%;
+      height: 22px;
+      background:
+        repeating-linear-gradient(
+          -45deg,
+          #2e7d32 0px,
+          #2e7d32 4px,
+          #1b5e20 4px,
+          #1b5e20 8px
+        );
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
       pointer-events: none;
+      z-index: 0;
+    }
+    .garland-top {
+      top: 0;
+      border-bottom: 2px solid #145a21;
+    }
+    .garland-bottom {
+      bottom: 0;
+      border-top: 2px solid #145a21;
     }
 
-    .message-box::before {
-      width: 120px;
-      height: 120px;
-      background: radial-gradient(circle at center, #ffffff, transparent 60%);
-      top: -40px;
-      left: -30px;
+    /* 四角鈴鐺（用 emoji 先當示意） */
+    .corner-bell {
+      position: absolute;
+      font-size: 20px;
+      color: #ffd54f;
+      text-shadow:
+        0 0 2px rgba(0,0,0,0.6),
+        0 2px 2px rgba(0,0,0,0.7);
+      pointer-events: none;
+      z-index: 1;
     }
-
-    .message-box::after {
-      width: 160px;
-      height: 160px;
-      background: radial-gradient(circle at center, #ffd54f, transparent 65%);
-      bottom: -60px;
-      right: -40px;
-    }
+    .bell-tl { top: 6px; left: 10px; transform: rotate(-15deg); }
+    .bell-tr { top: 6px; right: 10px; transform: rotate(12deg); }
+    .bell-bl { bottom: 6px; left: 14px; transform: rotate(8deg); }
+    .bell-br { bottom: 6px; right: 14px; transform: rotate(-10deg); }
 
     .message-title {
       position: relative;
@@ -125,23 +143,25 @@
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: #fff;
+      color: #b71c1c;
       margin-bottom: 8px;
+      z-index: 2;
     }
 
     .message-title span {
       display: inline-block;
       padding: 2px 10px;
       border-radius: 999px;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(183,28,28,0.08);
     }
 
     .message-text {
       position: relative;
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1.6;
-      color: #fffbe6;
-      margin: 6px 0 20px;
+      color: #333333;
+      margin: 10px 0 20px;
+      z-index: 2;
     }
 
     #callButton {
@@ -158,6 +178,7 @@
       color: #5a3b00;
       box-shadow: 0 4px 0 #c9a233, 0 0 10px rgba(255, 213, 79, 0.6);
       transition: transform 0.08s ease, box-shadow 0.08s ease;
+      z-index: 2;
     }
 
     #callButton:active {
@@ -218,9 +239,20 @@
     </video>
   </div>
 
-  <!-- 聖誕提示框 -->
+  <!-- 聖誕提示框：白底＋草＋鈴鐺 -->
   <div id="messageOverlay">
     <div class="message-box">
+      <!-- 草邊 -->
+      <div class="garland garland-top"></div>
+      <div class="garland garland-bottom"></div>
+
+      <!-- 鈴鐺四角 -->
+      <div class="corner-bell bell-tl">🔔</div>
+      <div class="corner-bell bell-tr">🔔</div>
+      <div class="corner-bell bell-bl">🔔</div>
+      <div class="corner-bell bell-br">🔔</div>
+
+      <!-- 內容文字 -->
       <div class="message-title">
         <span>MERRY XMAS SIGNAL</span>
       </div>
@@ -471,7 +503,7 @@
     }
   });
 
-  // ✅ 只用「影片播完」來關閉／往下走，不再用點擊 overlay
+  // 影片結束事件（不再用點擊 overlay 關閉）
   if (winVideo) {
     winVideo.addEventListener("ended", endWinVideoToMessage);
   }
