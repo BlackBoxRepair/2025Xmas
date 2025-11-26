@@ -207,242 +207,256 @@
   </div>
 
   <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
 
-    const winOverlay = document.getElementById("winOverlay");
-    const winVideo = document.getElementById("winVideo");
-    const prizeOverlay = document.getElementById("prizeOverlay");
-    const prizeVideo = document.getElementById("prizeVideo");
-    const messageOverlay = document.getElementById("messageOverlay");
-    const callButton = document.getElementById("callButton");
+  const winOverlay = document.getElementById("winOverlay");
+  const winVideo = document.getElementById("winVideo");
+  const prizeOverlay = document.getElementById("prizeOverlay");
+  const prizeVideo = document.getElementById("prizeVideo");
+  const messageOverlay = document.getElementById("messageOverlay");
+  const callButton = document.getElementById("callButton");
 
-    let isWinVideoPlaying = false;
-    let isMessageShowing = false;
-    let isPrizePlaying = false;
+  let isWinVideoPlaying = false;
+  let isMessageShowing = false;
+  let isPrizePlaying = false;
 
-    // 幾乎佔滿寬度的半圓
-    let cx = canvas.width / 2;
-    let cy = canvas.height - 18;
-    let outerR = canvas.width * 0.38;
-    let innerR = outerR * 0.7;
+  // 幾乎佔滿寬度的半圓
+  let cx = canvas.width / 2;
+  let cy = canvas.height - 18;
+  let outerR = canvas.width * 0.38;
+  let innerR = outerR * 0.7;
 
-    const ARC_START = Math.PI;
-    const ARC_END   = Math.PI * 2;
-    const ARC_LEN   = ARC_END - ARC_START;
+  const ARC_START = Math.PI;
+  const ARC_END   = Math.PI * 2;
+  const ARC_LEN   = ARC_END - ARC_START;
 
-    let pointerAngle = ARC_START;
-    let pointerDir = 1;
-    const pointerSpeed = 3.0;
+  let pointerAngle = ARC_START;
+  let pointerDir = 1;
+  const pointerSpeed = 3.0;
 
-    let redStart = 0;
-    let redEnd = 0;
+  let redStart = 0;
+  let redEnd = 0;
 
-    let isStopped = false;
-    let lastTime = null;
+  let isStopped = false;
+  let lastTime = null;
 
-    function resetRound() {
-      const redLen = ARC_LEN * (0.03 + Math.random() * 0.03); // 很小的中獎區
-      redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
-      redEnd = redStart + redLen;
+  function resetRound() {
+    // 很小的中獎區
+    const redLen = ARC_LEN * (0.03 + Math.random() * 0.03);
+    redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
+    redEnd = redStart + redLen;
 
+    pointerAngle = ARC_START;
+    pointerDir = 1;
+    isStopped = false;
+  }
+
+  function drawArc() {
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
+    ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
+    ctx.closePath();
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, redStart, redEnd, false);
+    ctx.arc(cx, cy, innerR, redEnd, redStart, true);
+    ctx.closePath();
+    ctx.fillStyle = "#ff4b4b";
+    ctx.fill();
+  }
+
+  function drawPointer() {
+    const midR = (outerR + innerR) / 2;
+    const x = cx + midR * Math.cos(pointerAngle);
+    const y = cy + midR * Math.sin(pointerAngle);
+
+    ctx.strokeStyle = "#3ecfff";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = "#3ecfff";
+    ctx.fill();
+  }
+
+  function update(dt) {
+    if (isStopped) return;
+
+    pointerAngle += pointerDir * pointerSpeed * dt;
+
+    if (pointerAngle > ARC_END) {
+      pointerAngle = ARC_END;
+      pointerDir = -1;
+    } else if (pointerAngle < ARC_START) {
       pointerAngle = ARC_START;
       pointerDir = 1;
-      isStopped = false;
     }
+  }
 
-    function drawArc() {
-      ctx.beginPath();
-      ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
-      ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
-      ctx.closePath();
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawArc();
+    drawPointer();
+  }
 
-      ctx.beginPath();
-      ctx.arc(cx, cy, outerR, redStart, redEnd, false);
-      ctx.arc(cx, cy, innerR, redEnd, redStart, true);
-      ctx.closePath();
-      ctx.fillStyle = "#ff4b4b";
-      ctx.fill();
-    }
+  function loop(timestamp) {
+    if (lastTime == null) lastTime = timestamp;
+    const dt = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
 
-    function drawPointer() {
-      const midR = (outerR + innerR) / 2;
-      const x = cx + midR * Math.cos(pointerAngle);
-      const y = cy + midR * Math.sin(pointerAngle);
+  // ===== 流程控制 =====
 
-      ctx.strokeStyle = "#3ecfff";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(x, y, 8, 0, Math.PI * 2);
-      ctx.fillStyle = "#3ecfff";
-      ctx.fill();
-    }
-
-    function update(dt) {
-      if (isStopped) return;
-
-      pointerAngle += pointerDir * pointerSpeed * dt;
-
-      if (pointerAngle > ARC_END) {
-        pointerAngle = ARC_END;
-        pointerDir = -1;
-      } else if (pointerAngle < ARC_START) {
-        pointerAngle = ARC_START;
-        pointerDir = 1;
-      }
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawArc();
-      drawPointer();
-    }
-
-    function loop(timestamp) {
-      if (lastTime == null) lastTime = timestamp;
-      const dt = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-      update(dt);
-      render();
-      requestAnimationFrame(loop);
-    }
-
-    // ------- 流程控制 -------
-
-    function showWinVideo() {
-      if (!winOverlay || !winVideo) {
-        alert("✅ 恭喜！停在紅色範圍內！");
-        resetRound();
-        return;
-      }
-      isWinVideoPlaying = true;
-      winOverlay.style.display = "flex";
-      winVideo.currentTime = 0;
-
-      const p = winVideo.play();
-      if (p && p.catch) {
-        p.catch(() => {
-          winVideo.setAttribute("controls", "controls");
-        });
-      }
-    }
-
-    function endWinVideoToMessage() {
-      isWinVideoPlaying = false;
-      if (winOverlay && winVideo) {
-        winOverlay.style.display = "none";
-        winVideo.pause();
-      }
-      showMessageOverlay();
-    }
-
-    function showMessageOverlay() {
-      isMessageShowing = true;
-      if (messageOverlay) messageOverlay.style.display = "flex";
-    }
-
-    function hideMessageOverlay() {
-      isMessageShowing = false;
-      if (messageOverlay) messageOverlay.style.display = "none";
-    }
-
-    function showPrizeVideo() {
-      if (!prizeOverlay || !prizeVideo) return;
-      isPrizePlaying = true;
-      prizeOverlay.style.display = "flex";
-      prizeVideo.currentTime = 0;
-
-      const p = prizeVideo.play();
-      if (p && p.catch) {
-        p.catch(() => {
-          prizeVideo.setAttribute("controls", "controls");
-        });
-      }
-    }
-
-    function endPrizeVideoAndReset() {
-      isPrizePlaying = false;
-      if (prizeOverlay && prizeVideo) {
-        prizeOverlay.style.display = "none";
-        prizeVideo.pause();
-      }
+  function showWinVideo() {
+    if (!winOverlay || !winVideo) {
+      alert("✅ 恭喜！停在紅色範圍內！");
       resetRound();
+      return;
     }
+    isWinVideoPlaying = true;
+    winOverlay.style.display = "flex";
+    winVideo.currentTime = 0;
 
-    function handleTap() {
-      // 任何影片或訊息框顯示時，不處理遊戲點擊
-      if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
-
-      if (!isStopped) {
-        isStopped = true;
-        const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
-        if (hit) {
-          showWinVideo();
-        } else {
-          alert("❌ 差一點點，再試一次！");
-        }
-      } else {
-        resetRound();
-      }
-    }
-
-    // ------- 事件綁定 -------
-
-    window.addEventListener("click", handleTap);
-    window.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      handleTap();
-    }, { passive: false });
-
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        handleTap();
-      }
-    });
-
-    // 中獎影片播完 → 顯示訊息框
-    if (winVideo) {
-      winVideo.addEventListener("ended", endWinVideoToMessage);
-    }
-    // 玩家點影片畫面也可以直接跳到訊息框
-    if (winOverlay) {
-      winOverlay.addEventListener("click", endWinVideoToMessage);
-      winOverlay.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        endWinVideoToMessage();
-      }, { passive: false });
-    }
-
-    // CALL 按鈕：關訊息框 → 播抽獎影片
-    if (callButton) {
-      callButton.addEventListener("click", () => {
-        hideMessageOverlay();
-        showPrizeVideo();
+    const p = winVideo.play();
+    if (p && p.catch) {
+      p.catch(() => {
+        winVideo.setAttribute("controls", "controls");
       });
     }
+  }
 
-    // 抽獎影片播完或被點 → 關閉並重置遊戲
-    if (prizeVideo) {
-      prizeVideo.addEventListener("ended", endPrizeVideoAndReset);
+  function endWinVideoToMessage() {
+    isWinVideoPlaying = false;
+    if (winOverlay && winVideo) {
+      winOverlay.style.display = "none";
+      winVideo.pause();
     }
-    if (prizeOverlay) {
-      prizeOverlay.addEventListener("click", endPrizeVideoAndReset);
-      prizeOverlay.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        endPrizeVideoAndReset();
-      }, { passive: false });
-    }
+    showMessageOverlay();
+  }
 
+  function showMessageOverlay() {
+    isMessageShowing = true;
+    if (messageOverlay) messageOverlay.style.display = "flex";
+  }
+
+  function hideMessageOverlay() {
+    isMessageShowing = false;
+    if (messageOverlay) messageOverlay.style.display = "none";
+  }
+
+  function showPrizeVideo() {
+    if (!prizeOverlay || !prizeVideo) return;
+    isPrizePlaying = true;
+    prizeOverlay.style.display = "flex";
+    prizeVideo.currentTime = 0;
+
+    const p = prizeVideo.play();
+    if (p && p.catch) {
+      p.catch(() => {
+        // 自動播放被擋住時顯示控制列，讓玩家自己按播放
+        prizeVideo.setAttribute("controls", "controls");
+      });
+    }
+  }
+
+  function endPrizeVideoAndReset() {
+    isPrizePlaying = false;
+    if (prizeOverlay && prizeVideo) {
+      prizeOverlay.style.display = "none";
+      prizeVideo.pause();
+    }
     resetRound();
-    requestAnimationFrame(loop);
-  </script>
+  }
+
+  function handleTap() {
+    // 有任何 overlay 出現時不處理遊戲點擊
+    if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
+
+    if (!isStopped) {
+      isStopped = true;
+      const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
+      if (hit) {
+        showWinVideo();
+      } else {
+        alert("❌ 差一點點，再試一次！");
+      }
+    } else {
+      resetRound();
+    }
+  }
+
+  // ===== 事件綁定 =====
+
+  window.addEventListener("click", handleTap);
+  window.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    handleTap();
+  }, { passive: false });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      handleTap();
+    }
+  });
+
+  // 中獎影片播完或被點 → 進入訊息框
+  if (winVideo) {
+    winVideo.addEventListener("ended", endWinVideoToMessage);
+  }
+  if (winOverlay) {
+    winOverlay.addEventListener("click", endWinVideoToMessage);
+    winOverlay.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      endWinVideoToMessage();
+    }, { passive: false });
+  }
+
+  // 抽獎影片錯誤（路徑錯或檔案不存在）→ 提示
+  if (prizeVideo) {
+    prizeVideo.addEventListener("error", () => {
+      alert("抽獎影片載入失敗，請檢查檔案名稱與路徑（例如 DONG.MP4）。");
+      endPrizeVideoAndReset();
+    });
+
+    prizeVideo.addEventListener("ended", endPrizeVideoAndReset);
+  }
+
+  if (prizeOverlay) {
+    prizeOverlay.addEventListener("click", endPrizeVideoAndReset);
+    prizeOverlay.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      endPrizeVideoAndReset();
+    }, { passive: false });
+  }
+
+  // CALL 按鈕：關閉訊息框 → 播抽獎影片
+  function onCall(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();  // 防止事件再往外冒泡
+    }
+    hideMessageOverlay();
+    showPrizeVideo();
+  }
+
+  if (callButton) {
+    callButton.addEventListener("click", onCall);
+    callButton.addEventListener("touchstart", onCall, { passive: false });
+  }
+
+  resetRound();
+  requestAnimationFrame(loop);
+</script>
 </body>
 </html>
