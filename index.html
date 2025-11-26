@@ -53,20 +53,117 @@
     }
 
     /* 勝利影片的全螢幕遮罩 */
-    #winOverlay {
+    #winOverlay,
+    #prizeOverlay,
+    #messageOverlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.9);
       display: none;              /* 預設隱藏 */
       justify-content: center;
       align-items: center;
-      z-index: 999;
+      z-index: 900;
     }
 
-    #winOverlay video {
+    #winOverlay video,
+    #prizeOverlay video {
       width: 90vw;
       max-width: 480px;
       border-radius: 16px;
+    }
+
+    /* 聖誕氛圍提示框 */
+    #messageOverlay {
+      z-index: 1000;
+    }
+
+    .message-box {
+      position: relative;
+      width: 80vw;
+      max-width: 420px;
+      padding: 24px 20px 26px;
+      border-radius: 20px;
+      text-align: center;
+      background: linear-gradient(135deg, #b71c1c, #880e4f);
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
+
+    .message-box::before,
+    .message-box::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .message-box::before {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at center, #ffffff, transparent 60%);
+      top: -40px;
+      left: -30px;
+    }
+
+    .message-box::after {
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle at center, #ffd54f, transparent 65%);
+      bottom: -60px;
+      right: -40px;
+    }
+
+    .message-title {
+      position: relative;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .message-title span {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .message-text {
+      position: relative;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #fffbe6;
+      margin: 6px 0 20px;
+    }
+
+    #callButton {
+      position: relative;
+      padding: 10px 36px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      background: #ffd54f;
+      color: #5a3b00;
+      box-shadow: 0 4px 0 #c9a233, 0 0 10px rgba(255, 213, 79, 0.6);
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+
+    #callButton:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #b3952c, 0 0 4px rgba(255, 213, 79, 0.6);
+    }
+
+    #callButton::before {
+      content: "📞";
+      margin-right: 6px;
     }
   </style>
 </head>
@@ -81,12 +178,32 @@
     </div>
   </div>
 
-  <!-- 勝利時跳出的影片彈窗：請把 win.mp4 換成你的動畫檔名 -->
+  <!-- 中獎時播放的動畫影片（已成功復原聖誕訊號） -->
   <div id="winOverlay">
     <video id="winVideo" playsinline webkit-playsinline>
       <source src="DING.mp4" type="video/mp4">
-      <!-- 如果需要可以再加其他格式 -->
     </video>
+  </div>
+
+  <!-- 抽獎影片 Overlay（按下 CALL 後播放） -->
+  <div id="prizeOverlay">
+    <video id="prizeVideo" playsinline webkit-playsinline>
+      <!-- 把這個檔名換成你實際的抽獎影片檔名，如果是 DONG.MP4 就不用改 -->
+      <source src="DONG.MP4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- 聖誕提示框（影片結束後出現） -->
+  <div id="messageOverlay">
+    <div class="message-box">
+      <div class="message-title">
+        <span>MERRY XMAS SIGNAL</span>
+      </div>
+      <div class="message-text">
+        已成功復原聖誕訊號，正在與北歐服務處取得聯繫
+      </div>
+      <button id="callButton">CALL</button>
+    </div>
   </div>
 
   <script>
@@ -95,7 +212,14 @@
 
     const winOverlay = document.getElementById("winOverlay");
     const winVideo = document.getElementById("winVideo");
-    let isVideoPlaying = false;
+    const prizeOverlay = document.getElementById("prizeOverlay");
+    const prizeVideo = document.getElementById("prizeVideo");
+    const messageOverlay = document.getElementById("messageOverlay");
+    const callButton = document.getElementById("callButton");
+
+    let isVideoPlaying = false;     // 中獎影片播放中
+    let isMessageShowing = false;   // 聖誕提示框顯示中
+    let isPrizePlaying = false;     // 抽獎影片播放中
 
     // 幾乎佔滿寬度的半圓
     let cx = canvas.width / 2;
@@ -195,7 +319,6 @@
 
     function showWinVideo() {
       if (!winOverlay || !winVideo) {
-        // 保險：如果沒 video element，就用 alert 當備援
         alert("✅ 恭喜！停在紅色範圍內！");
         resetRound();
         return;
@@ -207,35 +330,65 @@
       const p = winVideo.play();
       if (p && p.catch) {
         p.catch(() => {
-          // 如果自動播放被擋掉，就顯示控制列讓玩家手動播
           winVideo.setAttribute("controls", "controls");
         });
       }
     }
 
-    function hideWinVideoAndReset() {
+    function onWinVideoEnded() {
+      // 中獎影片結束：關掉影片 → 顯示聖誕提示框
       isVideoPlaying = false;
       winOverlay.style.display = "none";
       winVideo.pause();
+      showMessageOverlay();
+    }
+
+    function showMessageOverlay() {
+      isMessageShowing = true;
+      messageOverlay.style.display = "flex";
+    }
+
+    function hideMessageOverlay() {
+      isMessageShowing = false;
+      messageOverlay.style.display = "none";
+    }
+
+    function showPrizeVideo() {
+      if (!prizeOverlay || !prizeVideo) return;
+      isPrizePlaying = true;
+      prizeOverlay.style.display = "flex";
+      prizeVideo.currentTime = 0;
+
+      const p2 = prizeVideo.play();
+      if (p2 && p2.catch) {
+        p2.catch(() => {
+          prizeVideo.setAttribute("controls", "controls");
+        });
+      }
+    }
+
+    function hidePrizeVideoAndReset() {
+      isPrizePlaying = false;
+      prizeOverlay.style.display = "none";
+      prizeVideo.pause();
       resetRound();
     }
 
     function handleTap() {
-      // 播動畫時不處理遊戲點擊
-      if (isVideoPlaying) return;
+      // 播放任何影片或顯示提示框時，不處理遊戲點擊
+      if (isVideoPlaying || isMessageShowing || isPrizePlaying) return;
 
       if (!isStopped) {
         isStopped = true;
         const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
         if (hit) {
-          // 中獎 → 播放影片
+          // 中獎 → 播放中獎動畫影片
           showWinVideo();
         } else {
-          // 沒中獎 → 保持原本的提示＋再點一次重來
           alert("❌ 差一點點，再試一次！");
         }
       } else {
-        // 第二次點：沒中獎的情況下手動重置
+        // 沒中獎情況下：第二次點重玩
         resetRound();
       }
     }
@@ -254,18 +407,30 @@
       }
     });
 
-    // 影片播完自動關閉＋重開一局
+    // 影片事件綁定
     if (winVideo) {
-      winVideo.addEventListener("ended", hideWinVideoAndReset);
+      winVideo.addEventListener("ended", onWinVideoEnded);
     }
 
-    // 點擊影片遮罩也可以關閉＋重開一局
-    if (winOverlay) {
-      winOverlay.addEventListener("click", hideWinVideoAndReset);
-      winOverlay.addEventListener("touchstart", (e) => {
+    if (prizeVideo) {
+      prizeVideo.addEventListener("ended", hidePrizeVideoAndReset);
+    }
+
+    if (prizeOverlay) {
+      // 讓玩家可以點畫面關閉抽獎影片並重來
+      prizeOverlay.addEventListener("click", hidePrizeVideoAndReset);
+      prizeOverlay.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        hideWinVideoAndReset();
+        hidePrizeVideoAndReset();
       }, { passive: false });
+    }
+
+    // CALL 按鈕 → 關提示框，播抽獎影片
+    if (callButton) {
+      callButton.addEventListener("click", () => {
+        hideMessageOverlay();
+        showPrizeVideo();
+      });
     }
 
     resetRound();
