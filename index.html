@@ -186,7 +186,7 @@
       opacity: 0;
       pointer-events: none;
       z-index: 950;                 /* 比 canvas 高、比 overlay 低就好 */
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);  /* 只有黑色陰影，沒有螢光 */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
     }
   </style>
@@ -270,7 +270,7 @@
 
   // 專門隨機產生紅色區域
   function randomizeRedZone() {
-    const redLen = ARC_LEN * (0.03 + Math.random() * 0.03); // 仍然是很小的區域
+    const redLen = ARC_LEN * (0.03 + Math.random() * 0.03); // 很小的區域
     redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
     redEnd = redStart + redLen;
   }
@@ -471,19 +471,11 @@
     }
   });
 
-  // 中獎影片播完或被點 → 進入訊息框
+  // ✅ 只用「影片播完」來關閉／往下走，不再用點擊 overlay
   if (winVideo) {
     winVideo.addEventListener("ended", endWinVideoToMessage);
   }
-  if (winOverlay) {
-    winOverlay.addEventListener("click", endWinVideoToMessage);
-    winOverlay.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      endWinVideoToMessage();
-    }, { passive: false });
-  }
 
-  // 抽獎影片錯誤（路徑錯或檔案不存在）→ 提示
   if (prizeVideo) {
     prizeVideo.addEventListener("error", () => {
       alert("抽獎影片載入失敗，請檢查檔案名稱與路徑（例如 DONG.MP4）。");
@@ -491,14 +483,6 @@
     });
 
     prizeVideo.addEventListener("ended", endPrizeVideoAndReset);
-  }
-
-  if (prizeOverlay) {
-    prizeOverlay.addEventListener("click", endPrizeVideoAndReset);
-    prizeOverlay.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      endPrizeVideoAndReset();
-    }, { passive: false });
   }
 
   // CALL 按鈕：關閉訊息框 → 播抽獎影片
