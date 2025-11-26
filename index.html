@@ -51,6 +51,23 @@
       max-width: 600px;
       height: auto;
     }
+
+    /* 勝利影片的全螢幕遮罩 */
+    #winOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;              /* 預設隱藏 */
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #winOverlay video {
+      width: 90vw;
+      max-width: 480px;
+      border-radius: 16px;
+    }
   </style>
 </head>
 <body>
@@ -64,14 +81,26 @@
     </div>
   </div>
 
+  <!-- 勝利時跳出的影片彈窗：請把 win.mp4 換成你的動畫檔名 -->
+  <div id="winOverlay">
+    <video id="winVideo" playsinline webkit-playsinline>
+      <source src="win.mp4" type="video/mp4">
+      <!-- 如果需要可以再加其他格式 -->
+    </video>
+  </div>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    const winOverlay = document.getElementById("winOverlay");
+    const winVideo = document.getElementById("winVideo");
+    let isVideoPlaying = false;
+
     // 幾乎佔滿寬度的半圓
     let cx = canvas.width / 2;
     let cy = canvas.height - 18;        // 靠近畫布底部
-    let outerR = canvas.width * 0.38;   // ≈ 全寬的 96%
+    let outerR = canvas.width * 0.38;   // 半圓半徑
     let innerR = outerR * 0.7;          // 半圓厚度
 
     const ARC_START = Math.PI;          // 180°（左邊）
@@ -89,7 +118,7 @@
     let lastTime = null;
 
     function resetRound() {
-      // 隨機一段紅色中獎區域
+      // 隨機一段紅色中獎區域（很小）
       const redLen = ARC_LEN * (0.03 + Math.random() * 0.03);
       redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
       redEnd = redStart + redLen;
@@ -164,16 +193,49 @@
       requestAnimationFrame(loop);
     }
 
+    function showWinVideo() {
+      if (!winOverlay || !winVideo) {
+        // 保險：如果沒 video element，就用 alert 當備援
+        alert("✅ 恭喜！停在紅色範圍內！");
+        resetRound();
+        return;
+      }
+      isVideoPlaying = true;
+      winOverlay.style.display = "flex";
+      winVideo.currentTime = 0;
+
+      const p = winVideo.play();
+      if (p && p.catch) {
+        p.catch(() => {
+          // 如果自動播放被擋掉，就顯示控制列讓玩家手動播
+          winVideo.setAttribute("controls", "controls");
+        });
+      }
+    }
+
+    function hideWinVideoAndReset() {
+      isVideoPlaying = false;
+      winOverlay.style.display = "none";
+      winVideo.pause();
+      resetRound();
+    }
+
     function handleTap() {
+      // 播動畫時不處理遊戲點擊
+      if (isVideoPlaying) return;
+
       if (!isStopped) {
         isStopped = true;
         const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
         if (hit) {
-          alert("✅ 恭喜！停在紅色區域內！");
+          // 中獎 → 播放影片
+          showWinVideo();
         } else {
+          // 沒中獎 → 保持原本的提示＋再點一次重來
           alert("❌ 差一點點，再試一次！");
         }
       } else {
+        // 第二次點：沒中獎的情況下手動重置
         resetRound();
       }
     }
@@ -192,8 +254,19 @@
       }
     });
 
-    // 若之後你有想讓 canvas 隨視窗 resize 更新繪圖座標，
-    // 可以在這裡加事件重新計算 cx, cy, outerR, innerR。
+    // 影片播完自動關閉＋重開一局
+    if (winVideo) {
+      winVideo.addEventListener("ended", hideWinVideoAndReset);
+    }
+
+    // 點擊影片遮罩也可以關閉＋重開一局
+    if (winOverlay) {
+      winOverlay.addEventListener("click", hideWinVideoAndReset);
+      winOverlay.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        hideWinVideoAndReset();
+      }, { passive: false });
+    }
 
     resetRound();
     requestAnimationFrame(loop);
