@@ -9,38 +9,40 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      overflow: hidden;           /* 不要捲動條，全螢幕遊戲 */
     }
     body {
       background: #000;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
     }
 
-    /* 外層：決定圖片＋半圓的寬度 */
+    /* 外層：直接佔滿整個視窗（全螢幕） */
     .wrapper {
       position: relative;
-      width: 90vw;
-      max-width: 600px;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      margin: 0;
+      overflow: hidden;
     }
 
-    /* 上方聖誕圖片 */
+    /* 聖誕圖片鋪滿全螢幕 */
     .main-image {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
+      object-fit: cover;      /* 等比例裁切鋪滿畫面 */
     }
 
-    /* 半圓指針疊在圖片裡，靠下方 */
+    /* 半圓指針疊在畫面下方 */
     #overlay {
       position: absolute;
       left: 50%;
       bottom: 8%;
       transform: translateX(-50%);
       width: 100%;
+      max-width: 600px;
       display: flex;
       justify-content: center;
       pointer-events: none;   /* 點擊交給 window */
@@ -50,6 +52,7 @@
       width: 100%;
       max-width: 600px;
       height: auto;
+      display: block;
     }
 
     /* 三種全螢幕遮罩：中獎影片 / 抽獎影片 / 訊息框 */
@@ -168,30 +171,29 @@
     }
 
     /* 失敗提示小框：放在 wrapper 裡、半圓上方，整個黃色圓角框 */
-    /* 失敗提示小框：放在 wrapper 裡、半圓上方，整個黃色圓角框 */
-#failToast {
-  position: absolute;
-  left: 50%;
-  bottom: 34%;  /* 再往上一點的位置 */
-  transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
-  padding: 8px 18px 10px;
-  background: #ffd54f;          /* 整塊黃色 */
-  border-radius: 999px;
-  font-size: 14px;
-  letter-spacing: 0.08em;
-  color: #5a3b00;               /* 咖啡色文字 */
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 950;                 /* 比 canvas 高、比 overlay 低就好 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);  /* 只有黑色陰影，沒有螢光 */
-  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
-}
+    #failToast {
+      position: absolute;
+      left: 50%;
+      bottom: 34%;  /* 在半圓上方一點的位置 */
+      transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
+      padding: 8px 18px 10px;
+      background: #ffd54f;          /* 整塊黃色 */
+      border-radius: 999px;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      color: #5a3b00;               /* 咖啡色文字 */
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 950;                 /* 比 canvas 高、比 overlay 低就好 */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);  /* 只有黑色陰影，沒有螢光 */
+      transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- 背景聖誕手機圖 -->
+    <!-- 背景聖誕手機圖（全螢幕） -->
     <img src="BACKGROUND.png" alt="" class="main-image">
 
     <div id="overlay">
@@ -246,7 +248,7 @@
   let isPrizePlaying = false;
   let failToastTimer = null;
 
-  // 幾乎佔滿寬度的半圓
+  // 幾乎佔滿寬度的半圓（canvas 還是用 600x300 的座標系）
   let cx = canvas.width / 2;
   let cy = canvas.height - 18;
   let outerR = canvas.width * 0.38;
@@ -350,7 +352,6 @@
     const msg = messages[Math.floor(Math.random() * messages.length)];
     failToast.textContent = msg;
 
-    // 清除上一個計時器
     if (failToastTimer) {
       clearTimeout(failToastTimer);
       failToastTimer = null;
@@ -422,7 +423,6 @@
     const p = prizeVideo.play();
     if (p && p.catch) {
       p.catch(() => {
-        // 自動播放被擋住時顯示控制列，讓玩家自己按播放
         prizeVideo.setAttribute("controls", "controls");
       });
     }
@@ -439,17 +439,14 @@
 
   // 失敗指針不停，只有成功才停住
   function handleTap() {
-    // 有任何 overlay 出現時不處理遊戲點擊
     if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
 
     const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
 
     if (hit) {
-      // 成功才讓指針停止
       isStopped = true;
       showWinVideo();
     } else {
-      // 失敗只顯示提示，不改 isStopped，指針繼續搖擺
       showFailToast();
     }
   }
@@ -503,7 +500,7 @@
   function onCall(e) {
     if (e) {
       e.preventDefault();
-      e.stopPropagation();  // 防止事件再往外冒泡
+      e.stopPropagation();
     }
     hideMessageOverlay();
     showPrizeVideo();
