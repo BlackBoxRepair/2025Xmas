@@ -27,18 +27,18 @@
       max-width: 600px;
     }
 
-    /* 上方聖誕圖片（換成你的檔名） */
+    /* 上方聖誕圖片 */
     .main-image {
       width: 100%;
       height: auto;
       display: block;
     }
 
-    /* 半圓指針疊在圖片裡，靠下方四分之一 */
+    /* 半圓指針疊在圖片裡，靠下方 */
     #overlay {
       position: absolute;
       left: 50%;
-      bottom: 8%;           /* 想再往上就改大一點，例如 15% */
+      bottom: 8%;
       transform: translateX(-50%);
       width: 100%;
       display: flex;
@@ -47,12 +47,12 @@
     }
 
     #gameCanvas {
-      width: 100%;           /* 幾乎跟圖片同寬 */
+      width: 100%;
       max-width: 600px;
       height: auto;
     }
 
-    /* 勝利影片的全螢幕遮罩 */
+    /* 三種全螢幕遮罩：中獎影片 / 抽獎影片 / 訊息框 */
     #winOverlay,
     #prizeOverlay,
     #messageOverlay {
@@ -72,11 +72,12 @@
       border-radius: 16px;
     }
 
-    /* 聖誕氛圍提示框 */
+    /* 訊息框比影片再高一層，避免被蓋住 */
     #messageOverlay {
       z-index: 1000;
     }
 
+    /* 聖誕氛圍提示框 */
     .message-box {
       position: relative;
       width: 80vw;
@@ -85,7 +86,7 @@
       border-radius: 20px;
       text-align: center;
       background: linear-gradient(135deg, #b71c1c, #880e4f);
-      border: 2px solid rgba(255, 255, 255, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.9);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
       overflow: hidden;
     }
@@ -169,31 +170,30 @@
 </head>
 <body>
   <div class="wrapper">
-    <!-- 換成你的聖誕手機圖檔名 -->
+    <!-- 背景聖誕手機圖 -->
     <img src="BACKGROUND.png" alt="" class="main-image">
 
     <div id="overlay">
-      <!-- 固定繪圖座標 600x300，視覺上會跟著上面的圖片縮放 -->
       <canvas id="gameCanvas" width="600" height="300"></canvas>
     </div>
   </div>
 
-  <!-- 中獎時播放的動畫影片（已成功復原聖誕訊號） -->
+  <!-- 中獎時播放的動畫影片（修復聖誕訊號） -->
   <div id="winOverlay">
     <video id="winVideo" playsinline webkit-playsinline>
       <source src="DING.mp4" type="video/mp4">
     </video>
   </div>
 
-  <!-- 抽獎影片 Overlay（按下 CALL 後播放） -->
+  <!-- 抽獎影片（按 CALL 後播放） -->
   <div id="prizeOverlay">
     <video id="prizeVideo" playsinline webkit-playsinline>
-      <!-- 把這個檔名換成你實際的抽獎影片檔名，如果是 DONG.MP4 就不用改 -->
+      <!-- 把 DONG.MP4 改成你實際的檔名（大小寫要一樣） -->
       <source src="DONG.MP4" type="video/mp4">
     </video>
   </div>
 
-  <!-- 聖誕提示框（影片結束後出現） -->
+  <!-- 聖誕提示框 -->
   <div id="messageOverlay">
     <div class="message-box">
       <div class="message-title">
@@ -217,18 +217,18 @@
     const messageOverlay = document.getElementById("messageOverlay");
     const callButton = document.getElementById("callButton");
 
-    let isVideoPlaying = false;     // 中獎影片播放中
-    let isMessageShowing = false;   // 聖誕提示框顯示中
-    let isPrizePlaying = false;     // 抽獎影片播放中
+    let isWinVideoPlaying = false;
+    let isMessageShowing = false;
+    let isPrizePlaying = false;
 
     // 幾乎佔滿寬度的半圓
     let cx = canvas.width / 2;
-    let cy = canvas.height - 18;        // 靠近畫布底部
-    let outerR = canvas.width * 0.38;   // 半圓半徑
-    let innerR = outerR * 0.7;          // 半圓厚度
+    let cy = canvas.height - 18;
+    let outerR = canvas.width * 0.38;
+    let innerR = outerR * 0.7;
 
-    const ARC_START = Math.PI;          // 180°（左邊）
-    const ARC_END   = Math.PI * 2;      // 360°（右邊）
+    const ARC_START = Math.PI;
+    const ARC_END   = Math.PI * 2;
     const ARC_LEN   = ARC_END - ARC_START;
 
     let pointerAngle = ARC_START;
@@ -242,8 +242,7 @@
     let lastTime = null;
 
     function resetRound() {
-      // 隨機一段紅色中獎區域（很小）
-      const redLen = ARC_LEN * (0.03 + Math.random() * 0.03);
+      const redLen = ARC_LEN * (0.03 + Math.random() * 0.03); // 很小的中獎區
       redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
       redEnd = redStart + redLen;
 
@@ -253,7 +252,6 @@
     }
 
     function drawArc() {
-      // 白色半圓
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, ARC_START, ARC_END, false);
       ctx.arc(cx, cy, innerR, ARC_END, ARC_START, true);
@@ -261,7 +259,6 @@
       ctx.fillStyle = "#ffffff";
       ctx.fill();
 
-      // 紅色中獎區
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, redStart, redEnd, false);
       ctx.arc(cx, cy, innerR, redEnd, redStart, true);
@@ -317,13 +314,15 @@
       requestAnimationFrame(loop);
     }
 
+    // ------- 流程控制 -------
+
     function showWinVideo() {
       if (!winOverlay || !winVideo) {
         alert("✅ 恭喜！停在紅色範圍內！");
         resetRound();
         return;
       }
-      isVideoPlaying = true;
+      isWinVideoPlaying = true;
       winOverlay.style.display = "flex";
       winVideo.currentTime = 0;
 
@@ -335,22 +334,23 @@
       }
     }
 
-    function onWinVideoEnded() {
-      // 中獎影片結束：關掉影片 → 顯示聖誕提示框
-      isVideoPlaying = false;
-      winOverlay.style.display = "none";
-      winVideo.pause();
+    function endWinVideoToMessage() {
+      isWinVideoPlaying = false;
+      if (winOverlay && winVideo) {
+        winOverlay.style.display = "none";
+        winVideo.pause();
+      }
       showMessageOverlay();
     }
 
     function showMessageOverlay() {
       isMessageShowing = true;
-      messageOverlay.style.display = "flex";
+      if (messageOverlay) messageOverlay.style.display = "flex";
     }
 
     function hideMessageOverlay() {
       isMessageShowing = false;
-      messageOverlay.style.display = "none";
+      if (messageOverlay) messageOverlay.style.display = "none";
     }
 
     function showPrizeVideo() {
@@ -359,41 +359,42 @@
       prizeOverlay.style.display = "flex";
       prizeVideo.currentTime = 0;
 
-      const p2 = prizeVideo.play();
-      if (p2 && p2.catch) {
-        p2.catch(() => {
+      const p = prizeVideo.play();
+      if (p && p.catch) {
+        p.catch(() => {
           prizeVideo.setAttribute("controls", "controls");
         });
       }
     }
 
-    function hidePrizeVideoAndReset() {
+    function endPrizeVideoAndReset() {
       isPrizePlaying = false;
-      prizeOverlay.style.display = "none";
-      prizeVideo.pause();
+      if (prizeOverlay && prizeVideo) {
+        prizeOverlay.style.display = "none";
+        prizeVideo.pause();
+      }
       resetRound();
     }
 
     function handleTap() {
-      // 播放任何影片或顯示提示框時，不處理遊戲點擊
-      if (isVideoPlaying || isMessageShowing || isPrizePlaying) return;
+      // 任何影片或訊息框顯示時，不處理遊戲點擊
+      if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
 
       if (!isStopped) {
         isStopped = true;
         const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
         if (hit) {
-          // 中獎 → 播放中獎動畫影片
           showWinVideo();
         } else {
           alert("❌ 差一點點，再試一次！");
         }
       } else {
-        // 沒中獎情況下：第二次點重玩
         resetRound();
       }
     }
 
-    // 全畫面都可以點
+    // ------- 事件綁定 -------
+
     window.addEventListener("click", handleTap);
     window.addEventListener("touchstart", (e) => {
       e.preventDefault();
@@ -407,30 +408,37 @@
       }
     });
 
-    // 影片事件綁定
+    // 中獎影片播完 → 顯示訊息框
     if (winVideo) {
-      winVideo.addEventListener("ended", onWinVideoEnded);
+      winVideo.addEventListener("ended", endWinVideoToMessage);
     }
-
-    if (prizeVideo) {
-      prizeVideo.addEventListener("ended", hidePrizeVideoAndReset);
-    }
-
-    if (prizeOverlay) {
-      // 讓玩家可以點畫面關閉抽獎影片並重來
-      prizeOverlay.addEventListener("click", hidePrizeVideoAndReset);
-      prizeOverlay.addEventListener("touchstart", (e) => {
+    // 玩家點影片畫面也可以直接跳到訊息框
+    if (winOverlay) {
+      winOverlay.addEventListener("click", endWinVideoToMessage);
+      winOverlay.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        hidePrizeVideoAndReset();
+        endWinVideoToMessage();
       }, { passive: false });
     }
 
-    // CALL 按鈕 → 關提示框，播抽獎影片
+    // CALL 按鈕：關訊息框 → 播抽獎影片
     if (callButton) {
       callButton.addEventListener("click", () => {
         hideMessageOverlay();
         showPrizeVideo();
       });
+    }
+
+    // 抽獎影片播完或被點 → 關閉並重置遊戲
+    if (prizeVideo) {
+      prizeVideo.addEventListener("ended", endPrizeVideoAndReset);
+    }
+    if (prizeOverlay) {
+      prizeOverlay.addEventListener("click", endPrizeVideoAndReset);
+      prizeOverlay.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        endPrizeVideoAndReset();
+      }, { passive: false });
     }
 
     resetRound();
