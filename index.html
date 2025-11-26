@@ -80,17 +80,17 @@
       z-index: 1000;
     }
 
-    /* 🎄 聖誕氛圍提示框：白底＋草邊＋角落鈴鐺 */
+    /* 🎄 聖誕氛圍提示框：白底＋草邊＋角落鈴鐺（加大版） */
     .message-box {
       position: relative;
-      width: 80vw;
-      max-width: 420px;
-      padding: 32px 20px 30px;
-      border-radius: 18px;
+      width: 90vw;              /* 原本 80vw → 90vw */
+      max-width: 520px;          /* 原本 420px → 520px */
+      padding: 38px 26px 34px;   /* padding 加厚 */
+      border-radius: 20px;
       text-align: center;
       background: #ffffff;                      /* 白底 */
       border: 3px solid #e0e0e0;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
       overflow: hidden;
     }
 
@@ -99,7 +99,7 @@
       position: absolute;
       left: -10%;
       right: -10%;
-      height: 22px;
+      height: 24px;
       background:
         repeating-linear-gradient(
           -45deg,
@@ -124,7 +124,7 @@
     /* 四角鈴鐺（用 emoji 先當示意） */
     .corner-bell {
       position: absolute;
-      font-size: 20px;
+      font-size: 22px;  /* 鈴鐺也稍微放大 */
       color: #ffd54f;
       text-shadow:
         0 0 2px rgba(0,0,0,0.6),
@@ -132,44 +132,44 @@
       pointer-events: none;
       z-index: 1;
     }
-    .bell-tl { top: 6px; left: 10px; transform: rotate(-15deg); }
-    .bell-tr { top: 6px; right: 10px; transform: rotate(12deg); }
-    .bell-bl { bottom: 6px; left: 14px; transform: rotate(8deg); }
-    .bell-br { bottom: 6px; right: 14px; transform: rotate(-10deg); }
+    .bell-tl { top: 8px; left: 12px; transform: rotate(-15deg); }
+    .bell-tr { top: 8px; right: 12px; transform: rotate(12deg); }
+    .bell-bl { bottom: 8px; left: 16px; transform: rotate(8deg); }
+    .bell-br { bottom: 8px; right: 16px; transform: rotate(-10deg); }
 
     .message-title {
       position: relative;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-size: 22px;       /* 原本 18px → 22px */
+      font-weight: 800;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       color: #b71c1c;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       z-index: 2;
     }
 
     .message-title span {
       display: inline-block;
-      padding: 2px 10px;
+      padding: 4px 14px;
       border-radius: 999px;
       background: rgba(183,28,28,0.08);
     }
 
     .message-text {
       position: relative;
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 18px;        /* 原本 15px → 18px */
+      line-height: 1.7;
       color: #333333;
-      margin: 10px 0 20px;
+      margin: 12px 4px 24px;
       z-index: 2;
     }
 
     #callButton {
       position: relative;
-      padding: 10px 36px;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
+      padding: 12px 40px;
+      font-size: 19px;          /* 按鈕字也大一點 */
+      font-weight: 800;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       border: none;
       border-radius: 999px;
@@ -188,7 +188,7 @@
 
     #callButton::before {
       content: "📞";
-      margin-right: 6px;
+      margin-right: 8px;
     }
 
     /* 失敗提示小框：放在 wrapper 裡、半圓上方，整個黃色圓角框 */
@@ -239,7 +239,7 @@
     </video>
   </div>
 
-  <!-- 聖誕提示框：白底＋草＋鈴鐺 -->
+  <!-- 聖誕提示框：白底＋草＋鈴鐺（加大版） -->
   <div id="messageOverlay">
     <div class="message-box">
       <!-- 草邊 -->
