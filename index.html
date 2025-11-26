@@ -58,7 +58,8 @@
     /* 三種全螢幕遮罩：中獎影片 / 抽獎影片 / 訊息框 */
     #winOverlay,
     #prizeOverlay,
-    #messageOverlay {
+    #messageOverlay,
+    #resultOverlay {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.9);
@@ -83,12 +84,12 @@
     /* 🎄 聖誕氛圍提示框：白底＋草邊＋角落鈴鐺（加大版） */
     .message-box {
       position: relative;
-      width: 90vw;              /* 原本 80vw → 90vw */
-      max-width: 520px;          /* 原本 420px → 520px */
-      padding: 38px 26px 34px;   /* padding 加厚 */
+      width: 90vw;
+      max-width: 520px;
+      padding: 38px 26px 34px;
       border-radius: 20px;
       text-align: center;
-      background: #ffffff;                      /* 白底 */
+      background: #ffffff;
       border: 3px solid #e0e0e0;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75);
       overflow: hidden;
@@ -124,7 +125,7 @@
     /* 四角鈴鐺（用 emoji 先當示意） */
     .corner-bell {
       position: absolute;
-      font-size: 22px;  /* 鈴鐺也稍微放大 */
+      font-size: 22px;
       color: #ffd54f;
       text-shadow:
         0 0 2px rgba(0,0,0,0.6),
@@ -139,7 +140,7 @@
 
     .message-title {
       position: relative;
-      font-size: 38px;       /* 原本 18px → 22px */
+      font-size: 38px;
       font-weight: 800;
       letter-spacing: 0.16em;
       text-transform: uppercase;
@@ -157,7 +158,7 @@
 
     .message-text {
       position: relative;
-      font-size: 26px;        /* 原本 15px → 18px */
+      font-size: 26px;
       line-height: 1.7;
       color: #333333;
       margin: 12px 4px 24px;
@@ -167,7 +168,7 @@
     #callButton {
       position: relative;
       padding: 12px 40px;
-      font-size: 19px;          /* 按鈕字也大一點 */
+      font-size: 19px;
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
@@ -195,20 +196,59 @@
     #failToast {
       position: absolute;
       left: 50%;
-      bottom: 34%;  /* 在半圓上方一點的位置 */
-      transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
+      bottom: 34%;
+      transform: translateX(-50%) translateY(10px);
       padding: 8px 18px 10px;
-      background: #ffd54f;          /* 整塊黃色 */
+      background: #ffd54f;
       border-radius: 999px;
       font-size: 14px;
       letter-spacing: 0.08em;
-      color: #5a3b00;               /* 咖啡色文字 */
+      color: #5a3b00;
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
-      z-index: 950;                 /* 比 canvas 高、比 overlay 低就好 */
+      z-index: 950;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    }
+
+    /* 🎁 抽獎結果畫面（馴鹿卡片＋恭喜中獎） */
+    #resultOverlay {
+      z-index: 1100; /* 比訊息框再高一層 */
+    }
+
+    .result-card {
+      position: relative;
+      width: 90vw;
+      max-width: 720px;
+    }
+
+    .result-image {
+      width: 100%;
+      display: block;
+      border-radius: 24px;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.7);
+    }
+
+    .result-text {
+      position: absolute;
+      top: 45%;
+      left: 10%;
+      right: 10%;
+      transform: translateY(-50%);
+      text-align: left;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: #8b4a20;
+      text-shadow: 0 3px 4px rgba(255,255,255,0.6);
+    }
+
+    @media (max-width: 480px) {
+      .result-text {
+        font-size: 30px;
+        letter-spacing: 0.12em;
+      }
     }
   </style>
 </head>
@@ -221,7 +261,7 @@
       <canvas id="gameCanvas" width="600" height="300"></canvas>
     </div>
 
-    <!-- 失敗提示小框：放在 wrapper 裡，位置才會跟著遊戲走 -->
+    <!-- 失敗提示小框 -->
     <div id="failToast"></div>
   </div>
 
@@ -263,6 +303,14 @@
     </div>
   </div>
 
+  <!-- 🎁 抽獎結果畫面：馴鹿卡片＋「恭喜中獎」 -->
+  <div id="resultOverlay">
+    <div class="result-card">
+      <img src="result.png" alt="中獎結果" class="result-image">
+      <div class="result-text">恭喜中獎</div>
+    </div>
+  </div>
+
   <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
@@ -274,10 +322,12 @@
   const messageOverlay = document.getElementById("messageOverlay");
   const callButton = document.getElementById("callButton");
   const failToast = document.getElementById("failToast");
+  const resultOverlay = document.getElementById("resultOverlay");
 
   let isWinVideoPlaying = false;
   let isMessageShowing = false;
   let isPrizePlaying = false;
+  let isResultShowing = false;
   let failToastTimer = null;
 
   // 幾乎佔滿寬度的半圓（canvas 還是用 600x300 的座標系）
@@ -308,7 +358,7 @@
   }
 
   function resetRound() {
-    randomizeRedZone();   // 開局時也要有紅色區
+    randomizeRedZone();
     pointerAngle = ARC_START;
     pointerDir = 1;
     isStopped = false;
@@ -392,18 +442,13 @@
       failToastTimer = null;
     }
 
-    // 起始狀態：略低、透明
     failToast.style.opacity = "0";
     failToast.style.transform = "translateX(-50%) translateY(10px)";
-
-    // 強制 reflow，讓 transition 從這個狀態開始
     void failToast.offsetWidth;
 
-    // 顯示：往上滑到原位並淡入
     failToast.style.opacity = "1";
     failToast.style.transform = "translateX(-50%) translateY(0)";
 
-    // 停留 1.2 秒後往上滑並淡出
     failToastTimer = setTimeout(() => {
       failToast.style.opacity = "0";
       failToast.style.transform = "translateX(-50%) translateY(-20px)";
@@ -472,9 +517,26 @@
     resetRound();
   }
 
+  // 顯示抽獎結果畫面
+  function showResultOverlay() {
+    isPrizePlaying = false;
+    if (prizeOverlay && prizeVideo) {
+      prizeOverlay.style.display = "none";
+      prizeVideo.pause();
+    }
+    resetRound();                // 先重置下一輪
+    isResultShowing = true;
+    if (resultOverlay) resultOverlay.style.display = "flex";
+  }
+
+  function hideResultOverlay() {
+    isResultShowing = false;
+    if (resultOverlay) resultOverlay.style.display = "none";
+  }
+
   // 失敗指針不停，只有成功才停住
   function handleTap() {
-    if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
+    if (isWinVideoPlaying || isMessageShowing || isPrizePlaying || isResultShowing) return;
 
     const hit = pointerAngle >= redStart && pointerAngle <= redEnd;
 
@@ -482,7 +544,6 @@
       isStopped = true;
       showWinVideo();
     } else {
-      // 失敗：顯示提示 + 重新隨機紅色區域，但不重置指針
       showFailToast();
       randomizeRedZone();
     }
@@ -503,18 +564,28 @@
     }
   });
 
-  // 影片結束事件（不再用點擊 overlay 關閉）
+  // 中獎影片播完 → 進入訊息框
   if (winVideo) {
     winVideo.addEventListener("ended", endWinVideoToMessage);
   }
 
+  // 抽獎影片：錯誤 → 回到遊戲；播完 → 顯示結果畫面
   if (prizeVideo) {
     prizeVideo.addEventListener("error", () => {
       alert("抽獎影片載入失敗，請檢查檔案名稱與路徑（例如 DONG.MP4）。");
       endPrizeVideoAndReset();
     });
 
-    prizeVideo.addEventListener("ended", endPrizeVideoAndReset);
+    prizeVideo.addEventListener("ended", showResultOverlay);
+  }
+
+  // 點擊結果畫面 → 關閉，遊戲已經重置好
+  if (resultOverlay) {
+    resultOverlay.addEventListener("click", hideResultOverlay);
+    resultOverlay.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      hideResultOverlay();
+    }, { passive: false });
   }
 
   // CALL 按鈕：關閉訊息框 → 播抽獎影片
