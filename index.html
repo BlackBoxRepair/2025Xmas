@@ -167,36 +167,26 @@
       margin-right: 6px;
     }
 
-    /* 失敗提示小框：放在 wrapper 裡、半圓上方，底部有黃色圓角框 */
+    /* 失敗提示小框：放在 wrapper 裡、半圓上方，整個黃色圓角框 */
     #failToast {
       position: absolute;
       left: 50%;
-      bottom: 28%;  /* 比半圓的 bottom:8% 再高一些 */
+      bottom: 34%;  /* 再往上一點 */
       transform: translateX(-50%) translateY(10px); /* 起始略低一點 */
-      padding: 6px 16px 12px;
-      background: rgba(0, 0, 0, 0.82);
+      padding: 8px 18px 10px;
+      background: #ffd54f;
       border-radius: 999px;
       font-size: 14px;
       letter-spacing: 0.08em;
-      color: #fff;
+      color: #5a3b00;
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
       z-index: 950;  /* 比 canvas 高、比 overlay 低就好 */
+      box-shadow:
+        0 4px 10px rgba(0, 0, 0, 0.55),
+        0 0 10px rgba(255, 213, 79, 0.9);
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
-    }
-
-    #failToast::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: -4px;
-      width: 70%;
-      height: 6px;
-      background: #ffd54f;
-      border-radius: 999px;
-      box-shadow: 0 0 8px rgba(255, 213, 79, 0.7);
     }
   </style>
 </head>
@@ -448,7 +438,7 @@
     resetRound();
   }
 
-  // ★★ 重點：失敗時指針不會停，只在成功時停住 ★★
+  // 失敗指針不停，只有成功才停住
   function handleTap() {
     // 有任何 overlay 出現時不處理遊戲點擊
     if (isWinVideoPlaying || isMessageShowing || isPrizePlaying) return;
