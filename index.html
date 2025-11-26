@@ -268,12 +268,15 @@
   let isStopped = false;
   let lastTime = null;
 
-  function resetRound() {
-    // 很小的中獎區
-    const redLen = ARC_LEN * (0.03 + Math.random() * 0.03);
+  // 專門隨機產生紅色區域
+  function randomizeRedZone() {
+    const redLen = ARC_LEN * (0.03 + Math.random() * 0.03); // 仍然是很小的區域
     redStart = ARC_START + Math.random() * (ARC_LEN - redLen);
     redEnd = redStart + redLen;
+  }
 
+  function resetRound() {
+    randomizeRedZone();   // 開局時也要有紅色區
     pointerAngle = ARC_START;
     pointerDir = 1;
     isStopped = false;
@@ -447,7 +450,9 @@
       isStopped = true;
       showWinVideo();
     } else {
+      // 失敗：顯示提示 + 重新隨機紅色區域，但不重置指針
       showFailToast();
+      randomizeRedZone();
     }
   }
 
