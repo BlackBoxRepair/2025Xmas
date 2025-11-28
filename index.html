@@ -212,7 +212,7 @@
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
     }
 
-    /* 🎁 抽獎結果畫面：顯示聖誕貴賓函圖片 */
+    /* 🎁 抽獎結果畫面：顯示聖誕貴賓函 + QR 評價圖 */
     #resultOverlay {
       z-index: 1100; /* 比訊息框再高一層 */
     }
@@ -221,6 +221,10 @@
       position: relative;
       width: 90vw;
       max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
     }
 
     .result-image {
@@ -228,6 +232,29 @@
       display: block;
       border-radius: 24px;
       box-shadow: 0 14px 32px rgba(0,0,0,0.7);
+      background: #000;
+    }
+
+    /* 右上角「回到首頁」按鈕 */
+    #homeButton {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #333;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      cursor: pointer;
+    }
+    #homeButton:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.7);
     }
   </style>
 </head>
@@ -282,11 +309,16 @@
     </div>
   </div>
 
-  <!-- 🎁 抽獎結果畫面：只顯示你提供的聖誕貴賓函圖片 -->
+  <!-- 🎁 抽獎結果畫面：中獎圖 + Google 評價 QR 圖 -->
   <div id="resultOverlay">
+    <!-- 回到首頁按鈕（只有這顆可以關閉結果畫面） -->
+    <div id="homeButton">🏠</div>
+
     <div class="result-card">
-      <!-- 請把這張圖存成 result.png，或改成你實際的檔名 -->
-      <img src="RING.png" alt="中獎結果" class="result-image">
+      <!-- 中獎圖片 -->
+      <img src="RING.png"   alt="中獎結果" class="result-image">
+      <!-- Google 評價 QR&文字圖片 -->
+      <img src="GONGYI.png" alt="感謝支持" class="result-image">
     </div>
   </div>
 
@@ -302,6 +334,7 @@
   const callButton = document.getElementById("callButton");
   const failToast = document.getElementById("failToast");
   const resultOverlay = document.getElementById("resultOverlay");
+  const homeButton = document.getElementById("homeButton");
 
   let isWinVideoPlaying = false;
   let isMessageShowing = false;
@@ -558,13 +591,15 @@
     prizeVideo.addEventListener("ended", showResultOverlay);
   }
 
-  // 點擊結果畫面 → 關閉，遊戲已經重置好
-  if (resultOverlay) {
-    resultOverlay.addEventListener("click", hideResultOverlay);
-    resultOverlay.addEventListener("touchstart", (e) => {
+  // 只有按右上角房子才關閉結果畫面並回到遊戲
+  if (homeButton) {
+    const onHome = (e) => {
       e.preventDefault();
-      hideResultOverlay();
-    }, { passive: false });
+      e.stopPropagation();
+      hideResultOverlay();   // 遊戲已在 showResultOverlay 時 resetRound() 過
+    };
+    homeButton.addEventListener("click", onHome);
+    homeButton.addEventListener("touchstart", onHome, { passive: false });
   }
 
   // CALL 按鈕：關閉訊息框 → 播抽獎影片
