@@ -212,27 +212,37 @@
       transition: transform 0.6s ease-out, opacity 0.6s ease-out;
     }
 
-    /* 🎁 抽獎結果畫面：顯示聖誕貴賓函 + QR 評價圖 */
+    /* 🎁 抽獎結果畫面：聖誕貴賓函 + Google 評價圖 */
     #resultOverlay {
       z-index: 1100; /* 比訊息框再高一層 */
     }
 
+    /* 整張結果卡片：稍微窄一點，看起來不會太巨大 */
     .result-card {
       position: relative;
       width: 90vw;
-      max-width: 720px;
+      max-width: 540px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 14px;
     }
 
+    /* 通用圖片樣式 */
     .result-image {
-      width: 100%;
       display: block;
-      border-radius: 24px;
-      box-shadow: 0 14px 32px rgba(0,0,0,0.7);
-      background: #000;
+      border-radius: 20px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.7);
+    }
+
+    /* 上面紅綠信封：主視覺，寬度 100% */
+    .result-main {
+      width: 100%;
+    }
+
+    /* 下面評價 QR 圖：縮小一點，大約 70% 寬 */
+    .result-qr {
+      width: 70%;
     }
 
     /* 右上角「回到首頁」按鈕 */
@@ -309,16 +319,16 @@
     </div>
   </div>
 
-  <!-- 🎁 抽獎結果畫面：中獎圖 + Google 評價 QR 圖 -->
+  <!-- 🎁 抽獎結果畫面：上方聖誕貴賓函＋下方 Google 評價圖 -->
   <div id="resultOverlay">
-    <!-- 回到首頁按鈕（只有這顆可以關閉結果畫面） -->
+    <!-- 右上角「房子」按鈕：只有按這顆才會回到遊戲 -->
     <div id="homeButton">🏠</div>
 
     <div class="result-card">
-      <!-- 中獎圖片 -->
-      <img src="RING.png"   alt="中獎結果" class="result-image">
-      <!-- Google 評價 QR&文字圖片 -->
-      <img src="GONGYI.png" alt="感謝支持" class="result-image">
+      <!-- 中獎圖片：主視覺（紅綠信封） -->
+      <img src="RING.png"   alt="中獎結果" class="result-image result-main">
+      <!-- Google 評價 QR 圖：下面縮小版 -->
+      <img src="GONGYI.png" alt="感謝支持" class="result-image result-qr">
     </div>
   </div>
 
@@ -591,13 +601,16 @@
     prizeVideo.addEventListener("ended", showResultOverlay);
   }
 
-  // 只有按右上角房子才關閉結果畫面並回到遊戲
-  if (homeButton) {
-    const onHome = (e) => {
+  // 房子按鈕：關閉結果畫面，回到遊戲（遊戲已在背景 reset 好）
+  function onHome(e) {
+    if (e) {
       e.preventDefault();
-      e.stopPropagation();
-      hideResultOverlay();   // 遊戲已在 showResultOverlay 時 resetRound() 過
-    };
+      e.stopPropagation();  // 不要讓事件冒泡到 window，避免順便觸發一次 handleTap
+    }
+    hideResultOverlay();
+  }
+
+  if (homeButton) {
     homeButton.addEventListener("click", onHome);
     homeButton.addEventListener("touchstart", onHome, { passive: false });
   }
